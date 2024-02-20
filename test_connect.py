@@ -1,31 +1,34 @@
 import psycopg2 as pg 
 from psycopg2 import Error as pg_error
 import pandas as pd
-import os, json
+import os, json, csv
 
-csv_path = '/CSV'
-csv_file = 'laptop.csv'
+def header_transform(header):
+    return list(map(lambda x: x.lower().replace(" ", "_"), header))
+
+csv_path = 'CSV'
+csv_file = 'Laptops.csv'
 file_path = os.path.join(csv_path, csv_file) 
 
-cred_path = '/configs'
+cred_path = 'configs'
 cred_file = 'cred.json'
 cred_path = os.path.join(cred_path, cred_file) 
 
-print(cred_path)
-cred_parsed = json.loads(cred_path)
+with open(cred_path) as cred:
+    parsed_cred = json.load(cred)
 
-print( cred_parsed['username'])
-
-# conn = pg.connect(
-#     database = 'crypto_daily',
-#     host = '192.168.0.10',
-#     user = cred_parsed['username'],
-#     password = cred_parsed['password'],
-#     port = 5432
-#     )
+conn = pg.connect(
+    database = 'crypto_daily',
+    host = '192.168.0.10',
+    user = parsed_cred['username'],
+    password = parsed_cred['password'],
+    port = 5432
+    )
 
 
-# cursor = conn.cursor()
-# output = cursor.execute("CREATE TABLE IF NOT EXISTS ")
+with open(file_path, newline='') as f:
+    csv_reader = csv.reader(f)
+    csv_header = next(csv_reader)
 
-# with open(csv_path)
+
+transformed_header = header_transform(csv_header)
