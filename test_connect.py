@@ -34,25 +34,17 @@ with open(file_path, newline='') as f:
     csv_reader = csv.reader(f)
     csv_header = next(csv_reader)
 
-
+# CLEAN HEADER
 transformed_header = header_transform(csv_header)
+while("" in transformed_header):
+    transformed_header.remove("")
 
 drop_statement = """DROP TABLE IF EXISTS {}""".format(table_name)
 
 table_statement = """
-    CREATE TABLE IF NOT EXISTS {}(
-        brand TEXT,
-        model_name TEXT,
-        processor TEXT,
-        operating_system TEXT,
-        storage TEXT,
-        ram TEXT,
-        screen_size TEXT,
-        touch_screen TEXT,
-        price TEXT
-    )
-""".format(table_name)
-# print(table_statement)
+    CREATE TABLE IF NOT EXISTS {}({})
+""".format(table_name, ', '.join(str(e) + ' TEXT' for e in transformed_header))
+print(table_statement)
 
 load_statement = """
     COPY {}({})
@@ -60,7 +52,6 @@ load_statement = """
     DELIMITER ','
     CSV HEADER;
 """.format(table_name, ', '.join(transformed_header[1:-1]), str(file_path))
-# print(load_statement)
 
 
 try:
@@ -82,13 +73,13 @@ else:
             f_read = csv.reader(f)
             next(f_read)
             for idx, row in enumerate(f_read):
-                cursor.execute("""
+                insert_statement = """
                     INSERT INTO {}({}) VALUES ({})
                 """.format(table_name, 
-                           ', '.join(transformed_header[1:-1]), 
-                           ', '.join(repr(str(e)) for e in row[1:-1])
+                           ', '.join(transformed_header), 
+                           ', '.join(repr(str(e)) for e in row[1:])
                         )
-                )
+                cursor.execute(insert_statement)
     except pg.Error as e:
         print('Error has occurred while loading data into table [{}]'.format(table_name))
         print(e)
