@@ -7,10 +7,10 @@ def header_transform(header):
     return list(map(lambda x: x.lower().replace(" ", "_"), header))
 
 csv_path = 'CSV'
-csv_file = 'Laptops.csv'
+csv_file = 'cencus.csv'
 file_path = os.path.join(csv_path, csv_file) 
 
-table_name = 'laptop_specs'
+table_name = 'demo_cesus'
 
 cred_path = 'configs'
 cred_file = 'cred.json'
@@ -36,15 +36,16 @@ with open(file_path, newline='') as f:
 
 # CLEAN HEADER
 transformed_header = header_transform(csv_header)
+skipped = 0
 while("" in transformed_header):
     transformed_header.remove("")
+    skipped += 1
 
 drop_statement = """DROP TABLE IF EXISTS {}""".format(table_name)
 
 table_statement = """
     CREATE TABLE IF NOT EXISTS {}({})
 """.format(table_name, ', '.join(str(e) + ' TEXT' for e in transformed_header))
-print(table_statement)
 
 load_statement = """
     COPY {}({})
@@ -77,7 +78,7 @@ else:
                     INSERT INTO {}({}) VALUES ({})
                 """.format(table_name, 
                            ', '.join(transformed_header), 
-                           ', '.join(repr(str(e)) for e in row[1:])
+                           ', '.join(repr(str(e)).replace("'", "") for e in row[skipped:]).replace('"', "'")
                         )
                 cursor.execute(insert_statement)
     except pg.Error as e:
